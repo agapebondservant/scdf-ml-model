@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+matplotlib = "*"
+pmdarima = "*"
+prophet = "*"
+psycopg2-binary = "*"
+sqlalchemy = "*"
+python-dotenv = "*"
+pandas = "*"
+scikit-learn = "*"
+nbconvert = "*"
+seaborn = "*"
+traitlets = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
