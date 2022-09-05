@@ -1,6 +1,6 @@
 accelerator:
   displayName: Machine Learning Model Processor for Spring Cloud Data Flow
-  description: Project template for deploying a Python-based ML Model to a SCDF Streaming pipeline
+  description: A Python-based ML Model processor for SCDF Streaming pipelines
   iconUrl: https://cdn.worldvectorlogo.com/logos/python-3.svg
   tags:
     - "ML"
