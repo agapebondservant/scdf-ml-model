@@ -1,7 +1,7 @@
 accelerator:
   displayName: Machine Learning Model Processor for Spring Cloud Data Flow
   description: Project template for deploying a Python-based ML Model to a SCDF Streaming pipeline
-  iconUrl: https://upload.wikimedia.org/wikipedia/commons/1/1b/ML_Ops_Venn_Diagram.svg
+  iconUrl: https://cdn.worldvectorlogo.com/logos/python-3.svg
   tags:
     - "ML"
     - "AI"
