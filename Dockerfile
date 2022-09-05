@@ -12,14 +12,16 @@ COPY $MLMODEL_EXTRA_REQUIREMENTS_TXT ./extra-requirements.txt
 COPY Pipfile ./Pipfile
 COPY Pipfile.lock ./Pipfile.lock
 
-RUN apt-get update \
+RUN apt-get clean && apt-get update \
     && apt-get install g++ -y \
     && apt-get install gcc -y \
+    && apt-get install git -y \
     && apt-get install -y default-libmysqlclient-dev \
     && apt-get clean && \
     pip3 install -r base-requirements.txt -r extra-requirements.txt
 
 COPY rabbitmq ./rabbitmq
+COPY scdfutils ./scdfutils
+COPY run-model.sh ./run-model.sh
 
-ENTRYPOINT ["python", "-m"]
-CMD ["app.hello"]
+ENTRYPOINT ["sh", "-c", "./run-model.sh"]

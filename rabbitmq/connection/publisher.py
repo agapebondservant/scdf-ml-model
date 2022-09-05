@@ -1,7 +1,6 @@
 import pika
 import logging
 from rabbitmq.connection import connection
-import types
 
 
 class Publisher(connection.Connection):
