@@ -19,3 +19,4 @@ pika
 Pillow
 streamlit-autorefresh
 jupyterflow
+ray
