@@ -22,6 +22,5 @@ RUN apt-get clean && apt-get update \
 
 COPY rabbitmq ./rabbitmq
 COPY scdfutils ./scdfutils
-COPY run-model.sh ./run-model.sh
 
-ENTRYPOINT ["sh", "-c", "./run-model.sh"]
+ENTRYPOINT ["python", "/parent/scdfutils/run_model.py"]

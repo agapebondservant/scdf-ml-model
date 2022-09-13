@@ -19,4 +19,5 @@ pika
 Pillow
 streamlit-autorefresh
 jupyterflow
-ray
+ray[default]
+lz4

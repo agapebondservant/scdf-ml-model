@@ -39,15 +39,15 @@ stream create --name MyPipeline --definition '<your source> | <your processor> |
 ```
 Sample:
 ```
-stream create --name anomaly_detection_training --definition 'http | extract-features: ml-model | build-arima-model: ml-model | log'
+stream create --name anomaly-detection-training --definition 'http | extract-features: ml-model model_entry=app.main git_sync_repo=https://github.com/agapebondservant/sample-ml-step.git| build-arima-model: ml-model model_entry=app.main git_sync_repo=https://github.com/agapebondservant/sample-ml-step.git | log'
 ```
 
 * To deploy a streaming pipeline:
 ```
-stream deploy --name MyPipeline --properties 'deployer.ml-model.kubernetes.enviromentVariables=ENV1=VAL1,ENV2=VAL2,...'
+stream deploy --name MyPipeline --properties 'deployer.ml-model.kubernetes.enviroment-variables=ENV1=VAL1,ENV2=VAL2,...'
 ```
 
 Sample:
 ```
-stream deploy --name anomaly_detection_training --properties 'deployer.extract-features.kubernetes.enviromentVariables=GIT_SYNC_REPO=github.com/agapebondservant/sample-ml-step.git,MODEL_ENTRY=app.main,deployer.build-arima-model.kubernetes.enviromentVariables=GIT_SYNC_REPO=github.com/agapebondservant/sample-ml-step.git,MODEL_ENTRY=app.main'
+stream deploy --name anomaly-detection-training --properties 'deployer.extract-features.kubernetes.enviroment-variables=GIT_SYNC_REPO=https://github.com/agapebondservant/sample-ml-step.git,MODEL_ENTRY=app.main,deployer.build-arima-model.kubernetes.enviroment-variables=GIT_SYNC_REPO=https://github.com/agapebondservant/sample-ml-step.git,MODEL_ENTRY=app.main'
 ```

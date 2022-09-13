@@ -5,7 +5,6 @@ import logging
 
 
 def get_cmd_arg(name):
-    logging.info("was here...")
     d = defaultdict(list)
     for cmd_args in sys.argv[1:]:
         cmd_arg = cmd_args.split('=')
