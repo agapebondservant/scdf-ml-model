@@ -19,8 +19,9 @@ git clone address (https) of the git repository hosting the Python ML model
 
 * To build and test ML Model Processor docker image locally:
 ```
-docker build -t ml-model:0.0.1 .
-docker run -v $(pwd)/app:/parent/app ml-model:0.0.1
+docker build -t scdf-ml-model:0.0.1 .
+docker push scdf-ml-model:0.0.1 .
+docker run -v $(pwd)/app:/parent/app scdf-ml-model:0.0.1
 ```
 
 * To register custom ML processor:

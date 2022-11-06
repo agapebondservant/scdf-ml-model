@@ -2,6 +2,10 @@ import os
 import sys
 from collections import defaultdict
 import logging
+from dotenv import load_dotenv
+
+
+# load_dotenv()
 
 
 def get_cmd_arg(name):

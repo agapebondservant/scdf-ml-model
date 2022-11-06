@@ -1,2 +1,3 @@
 app/__pycache__/
 spring-shell.log
+.env
