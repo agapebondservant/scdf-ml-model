@@ -90,7 +90,7 @@ class Connection(threading.Thread):
     def __init__(self,
                  host=None):
         """Class initializer"""
-        super(Connection, self).__init__()
+        super(Connection, self).__init__(daemon=True)
         self._connection = None
         self.conn_retry_count = 0
         self.channel = None

@@ -1,14 +1,29 @@
 import os
-from scdfutils import utils
+import sys
+import mlflow
+import logging
+from mlflow.tracking import MlflowClient
+from mlflow.utils.logging_utils import eprint
 
-os.system("echo Start driver script...")
+try:
+    logging.getLogger().setLevel(logging.INFO)
 
-MODEL_ENTRY = utils.get_cmd_arg('model_entry')
-GIT_SYNC_REPO = utils.get_cmd_arg('git_sync_repo')
+    logging.info("Start driver script...")
 
-os.system(f'echo MODEL_ENTRY={MODEL_ENTRY}; '
-          f'echo GIT_SYNC_REPO={GIT_SYNC_REPO}; '
-          f'mkdir -p git_tmp; git clone {GIT_SYNC_REPO} git_tmp; '
-          f'mv git_tmp/* .; ls -altr .; python -m {MODEL_ENTRY}')
+    git_sync_repo = sys.argv[1]
 
-os.system("End driver script.")
+    logging.info(f"Executing: {git_sync_repo}")
+
+    with mlflow.start_run() as active_run:
+        run_id = mlflow.active_run().info.run_id
+
+        submitted_run = mlflow.run(git_sync_repo, 'main', version='main', env_manager='local')
+
+        submitted_run_metadata = MlflowClient().get_run(submitted_run.run_id)
+
+        logging.info(f"Submitted Run: {submitted_run}\nSubmitted Run Metadata: {submitted_run_metadata}")
+
+except Exception as e:
+    logging.info('Could not complete execution - error occurred: ', exc_info=True)
+
+logging.info("End driver script.")

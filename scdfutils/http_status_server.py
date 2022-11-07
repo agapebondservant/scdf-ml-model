@@ -19,8 +19,16 @@ class HttpHealthServer(BaseHTTPRequestHandler):
         self.send_response(404)
 
     @staticmethod
+    def keepalive():
+        while True:
+            continue
+
+    @staticmethod
     def run_thread(port=8080):
         http_server = HTTPServer(('', port), HttpHealthServer)
         thread = threading.Thread(name='httpd_server', target=http_server.serve_forever)
         thread.setDaemon(True)
         thread.start()
+
+        keepalive = threading.Thread(name='httpd_server_keepalive', target=HttpHealthServer.keepalive)
+        keepalive.start()
