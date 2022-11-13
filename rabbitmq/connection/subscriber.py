@@ -20,7 +20,6 @@ class Subscriber(connection.Connection):
         self.channel.add_on_close_callback(lambda ch, err: self.on_channel_closed(ch, err))
         self.channel.queue_declare(queue=self.queue, durable=True,
                                    callback=lambda frame: self.on_queue_declared(frame),
-                                   passive=True,
                                    arguments=self.queue_arguments)
 
     def on_queue_declared(self, frame):
@@ -41,10 +40,17 @@ class Subscriber(connection.Connection):
         """Called when we receive a message from RabbitMQ"""
         try:
             self.receive_callback(self, header, body)
+            self._receive_buffer.append(body.decode('ascii'))
             self.channel = _channel
             self.channel.basic_ack(method.delivery_tag, True)
             # cb = functools.partial(self.ack_message, self.channel, method.delivery_tag, True)
             # self.connection.add_callback_threadsafe(cb)
+        except Exception as e:
+            logging.error('Could not complete execution - error occurred: ', exc_info=True)
+
+    def __iter__(self):
+        try:
+            yield self._receive_buffer.pop(0) if len(self._receive_buffer) else None
         except Exception as e:
             logging.error('Could not complete execution - error occurred: ', exc_info=True)
 
@@ -119,3 +125,4 @@ class Subscriber(connection.Connection):
         self.conn_retry_count = conn_retry_count
         self.channel = None
         self._connection = None
+        self._receive_buffer = []

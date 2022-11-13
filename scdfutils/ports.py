@@ -4,9 +4,14 @@ from rabbitmq.connection.rabbitmq_producer import RabbitMQProducer
 from rabbitmq.connection.rabbitmq_consumer import RabbitMQConsumer
 import pika
 from scdfutils import utils
+import logging
+from datetime import datetime
+import json
 
 _property_prefix = 'SCDF_ML_MODEL'
 FlowType = Enum('FlowType', ['INBOUND', 'OUTBOUND', 'NONE'])
+logger = logging.getLogger('ports')
+logger.setLevel(logging.INFO)
 
 """
 Factory which generates instances of "ports", i.e. inbound/outbound channels which
@@ -17,6 +22,55 @@ Currently supported ports:
 - rabbitmq_streams
 - prometheus
 """
+
+
+def get_outbound_control_port(**kwargs):
+    if utils.get_env_var('SPRING_RABBITMQ_HOST'):
+        logging.info(f"In outbound_control_port: exchange: {utils.get_env_var('OUTBOUND_PORT')}, "
+                     f"routing key: {utils.get_env_var('OUTBOUND_PORT_BINDING')}")
+        producer = RabbitMQProducer(host=utils.get_env_var('SPRING_RABBITMQ_HOST'),
+                                    username=utils.get_env_var('SPRING_RABBITMQ_USERNAME'),
+                                    password=utils.get_env_var('SPRING_RABBITMQ_PASSWORD'),
+                                    exchange='',
+                                    routing_key=utils.get_env_var('OUTBOUND_PORT_BINDING'),
+                                    send_callback=send_to_outbound_port)
+        producer.__dict__.update(**kwargs)
+        producer.start()
+        return producer
+    else:
+        raise ValueError('Invalid binder: Currently supports [rabbitmq]')
+
+
+def get_inbound_control_port(**kwargs):
+    if utils.get_env_var('SPRING_RABBITMQ_HOST'):
+        logging.info(f"In inbound_control_port: queue: {utils.get_env_var('INBOUND_PORT_QUEUE')}")
+        consumer = RabbitMQConsumer(host=utils.get_env_var('SPRING_RABBITMQ_HOST'),
+                                    username=utils.get_env_var('SPRING_RABBITMQ_USERNAME'),
+                                    password=utils.get_env_var('SPRING_RABBITMQ_PASSWORD'),
+                                    queue=utils.get_env_var('INBOUND_PORT_QUEUE'),
+                                    queue_arguments={},
+                                    receive_callback=receive_from_inbound_port)
+        consumer.__dict__.update(**kwargs)
+        consumer.start()
+        return consumer
+    else:
+        raise ValueError('Invalid binder: Currently supports [rabbitmq]')
+
+
+def send_to_outbound_port(self, _channel ):
+    logger.info("in process_outputs...")
+    if self.data is not None:
+        self.channel.basic_publish(self.exchange, self.routing_key,
+                                   json.dumps(self.data),
+                                   pika.BasicProperties(content_type='text/plain',
+                                                        delivery_mode=pika.DeliveryMode.Persistent,
+                                                        timestamp=int(datetime.now().timestamp())))
+
+
+def receive_from_inbound_port(self, header, body):
+    msg = body.decode('ascii')
+    logger.info(f"Received message...{msg}")
+    return msg
 
 
 def get_rabbitmq_port(port_name, flow_type, **kwargs):
@@ -42,7 +96,7 @@ def get_rabbitmq_port(port_name, flow_type, **kwargs):
         consumer.start()
         return consumer
     else:
-        return ValueError('Invalid flow type: Must be one of [outbound, inbound]')
+        raise ValueError('Invalid flow type: Must be one of [outbound, inbound]')
 
 
 def get_rabbitmq_streams_port(port_name, flow_type=FlowType.NONE, **kwargs):
@@ -68,7 +122,7 @@ def get_rabbitmq_streams_port(port_name, flow_type=FlowType.NONE, **kwargs):
         consumer.start()
         return consumer
     else:
-        return ValueError('Invalid flow type: Must be one of [outbound, inbound]')
+        raise ValueError('Invalid flow type: Must be one of [outbound, inbound]')
 
 
 def get_prometheus_port(port_name):

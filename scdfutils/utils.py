@@ -2,7 +2,7 @@ import os
 import sys
 from collections import defaultdict
 import logging
-from dotenv import load_dotenv
+import traceback
 
 
 # load_dotenv()
@@ -28,6 +28,10 @@ def get_env_var(name):
         logging.info('Unknown environment variable requested: {}'.format(name))
 
 
+def set_env_var(name, value):
+    os.environ[name] = value
+
+
 def get_rabbitmq_host():
     return get_env_var('SPRING_RABBITMQ_HOST')
 
@@ -40,9 +44,8 @@ def get_rabbitmq_password():
     return get_env_var('SPRING_RABBITMQ_PASSWORD')
 
 
-def get_input_channel():
-    return get_cmd_arg("spring.cloud.stream.bindings.input.destination")
+def handle_exception(exc_type, exc_value, tb):
+    logging.error(f'caught {exc_type} with value {exc_value}\n')
+    logging.error(traceback.format_exc())
+    raise
 
-
-def get_output_channel():
-    return get_cmd_arg("spring.cloud.stream.bindings.output.destination")
