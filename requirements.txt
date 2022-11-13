@@ -29,3 +29,4 @@ fastapi
 modin[ray]
 python-dotenv
 https://github.com/agapebondservant/pipeline-wrapper-accelerator/zipball/main
+prodict

@@ -8,11 +8,14 @@ import pika
 from datetime import datetime
 import sys
 import json
+from prodict import Prodict
 
 # sys.excepthook = utils.handle_exception
 logger = logging.getLogger('scdf-adapter')
 logger.setLevel(logging.INFO)
 
+
+mlparams = Prodict()
 
 def scdf_adapter(environment=None):
     """
@@ -41,8 +44,7 @@ def scdf_adapter(environment=None):
 
             inbound_port = ports.get_inbound_control_port()
             outbound_port = ports.get_outbound_control_port()
-
-            mlparams = {}
+            global mlparams
 
             while True:
                 for inputs in inbound_port:
@@ -58,16 +60,18 @@ def scdf_adapter(environment=None):
 
                             # Set up mlparams
                             inputs = ray_parameter_server.get(inputs)
-                            mlparams = {**inputs}
+                            mlparams = Prodict.from_dict({**inputs})
                             logger.info(f"Input params...{inputs}\nmlparams...{mlparams}\n")
 
                             # Invoke ML command on Ray
                             outputs = ray_environment.run_worker(func=func,
-                                                                 input_args=tuple([eval("f'{}'".format(arg)) for arg in args]),
-                                                                 input_kwargs={k: eval("f'{}'".format(v)) for k, v in kwargs.items()})
+                                                                 input_args=tuple(
+                                                                     [eval("f'{}'".format(arg)) for arg in args]),
+                                                                 input_kwargs={k: eval("f'{}'".format(v)) for k, v in
+                                                                               kwargs.items()})
 
                             # Merge method outputs with mlparams
-                            mlparams = {**mlparams, **{utils.get_env_var('CURRENT_APP'): outputs}}
+                            mlparams = Prodict.from_dict({**mlparams, **{utils.get_env_var('CURRENT_APP'): outputs}})
                             mlparams_ref = ray_parameter_server.put(mlparams)
                             logger.info(f"Newly set params...{mlparams} {mlparams_ref}")
 
@@ -76,8 +80,8 @@ def scdf_adapter(environment=None):
                             logger.info(f"Running in local environment...{args} {kwargs} {inputs}")
 
                             # Set up mlparams
-                            mlparams = {**inputs}
-                            logger.info(f"Input params...{inputs}\nmlparams...{mlparams}")
+                            mlparams = Prodict.from_dict({**inputs})
+                            logger.info(f"Input params...{inputs}\nmlparams...{mlparams}\nhttp..{mlparams.http}")
 
                             # Invoke ML command locally
                             ml_args = tuple([eval("f'{}'".format(arg)) for arg in args])
@@ -85,7 +89,7 @@ def scdf_adapter(environment=None):
                             outputs = func(*ml_args, **ml_kwargs)
 
                             # Merge ML command outputs with mlparams
-                            mlparams = {**mlparams, **{utils.get_env_var('CURRENT_APP'): outputs}}
+                            mlparams = Prodict.from_dict({**mlparams, **{utils.get_env_var('CURRENT_APP'): outputs}})
                             logger.info(f"Newly set params...{mlparams}")
 
                         outbound_port.send_data(mlparams)
