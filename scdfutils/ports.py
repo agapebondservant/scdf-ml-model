@@ -7,6 +7,10 @@ from scdfutils import utils
 import logging
 from datetime import datetime
 import json
+from mlmetrics import exporter
+import asyncio
+import nest_asyncio
+nest_asyncio.apply()
 
 _property_prefix = 'SCDF_ML_MODEL'
 FlowType = Enum('FlowType', ['INBOUND', 'OUTBOUND', 'NONE'])
@@ -125,8 +129,12 @@ def get_rabbitmq_streams_port(port_name, flow_type=FlowType.NONE, **kwargs):
         raise ValueError('Invalid flow type: Must be one of [outbound, inbound]')
 
 
-def get_prometheus_port(port_name):
-    pass
+"""async def get_control_port_rsocket():
+    logger.info("Setting up prometheus host and port...")
+    prometheus_proxy_host = utils.get_env_var('PROMETHEUS_HOST')
+    prometheus_proxy_port = utils.get_env_var('PROMETHEUS_PORT')
+    connection = await exporter.get_rsync_connection(prometheus_proxy_host, prometheus_proxy_port)
+    asyncio.run(exporter.expose_metrics_rsocket(connection))"""
 
 
 def _get_port_property(port_name, port_type, property_name):

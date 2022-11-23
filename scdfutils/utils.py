@@ -3,6 +3,8 @@ import sys
 from collections import defaultdict
 import logging
 import traceback
+import joblib
+import tempfile
 
 
 # load_dotenv()
@@ -47,5 +49,10 @@ def get_rabbitmq_password():
 def handle_exception(exc_type, exc_value, tb):
     logging.error(f'caught {exc_type} with value {exc_value}\n')
     logging.error(traceback.format_exc())
-    raise
+    sys.exit(1)
 
+
+def create_temp_file(content):
+    with tempfile.NamedTemporaryFile() as f:
+        joblib.dump(content, f)
+        return f
