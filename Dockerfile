@@ -18,7 +18,7 @@ RUN apt-get clean && apt-get update \
     && apt-get install git -y \
     && apt-get install -y default-libmysqlclient-dev \
     && apt-get clean && \
-    pip3 install -r base-requirements.txt -r extra-requirements.txt
+    pip3 install --no-cache-dir  -r base-requirements.txt -r extra-requirements.txt
 
 COPY rabbitmq ./rabbitmq
 COPY scdfutils ./scdfutils

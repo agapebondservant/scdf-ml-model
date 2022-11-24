@@ -9,6 +9,7 @@ from datetime import datetime
 import json
 from mlmetrics import exporter
 import asyncio
+import mlflow
 import nest_asyncio
 nest_asyncio.apply()
 
@@ -135,6 +136,13 @@ def get_rabbitmq_streams_port(port_name, flow_type=FlowType.NONE, **kwargs):
     prometheus_proxy_port = utils.get_env_var('PROMETHEUS_PORT')
     connection = await exporter.get_rsync_connection(prometheus_proxy_host, prometheus_proxy_port)
     asyncio.run(exporter.expose_metrics_rsocket(connection))"""
+
+
+async def get_mlflow_artifacts_inbound_port(flow_type=FlowType.INBOUND, **kwargs):
+    if flow_type is FlowType.INBOUND:
+        return utils.download_mlflow_artifacts(mlflow.last_active_run(), kwargs['artifact_name'])
+    else:
+        raise ValueError('Invalid flow type for this port: supports [inbound]')
 
 
 def _get_port_property(port_name, port_type, property_name):

@@ -30,3 +30,12 @@ modin[ray]
 python-dotenv
 https://github.com/agapebondservant/pipeline-wrapper-accelerator/zipball/main
 prodict
+https://github.com/agapebondservant/ml-metrics-accelerator/zipball/main
+rsocket
+asyncio
+nest_asyncio
+# cryptography #=3.4.8
+python-snappy
+# pycryptodomex
+evidently
+boto3

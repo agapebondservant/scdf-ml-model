@@ -3,6 +3,7 @@ import mlflow
 import logging
 from mlflow.tracking import MlflowClient
 from scdfutils import utils
+import json
 
 try:
     logging.getLogger().setLevel(logging.INFO)
@@ -30,13 +31,21 @@ try:
 
     utils.set_env_var('CURRENT_EXPERIMENT', current_experiment_name)
 
+    utils.set_env_var('RUN_TAG', run_tag)
+
     current_experiment = mlflow.get_experiment_by_name(current_experiment_name)
 
     current_experiment_id = current_experiment.experiment_id if current_experiment and current_experiment.lifecycle_stage == 'active' else mlflow.create_experiment(current_experiment_name)
 
     with mlflow.start_run(experiment_id=current_experiment_id) as active_run:
 
-        mlflow.set_tags({'step': current_app, 'run_tag': run_tag})
+        mlflow_tags = {'step': current_app, 'run_tag': run_tag}
+
+        mlflow.set_tags(mlflow_tags)
+
+        utils.set_env_var("MLFLOW_EXPERIMENT_ID", current_experiment_id)
+
+        utils.set_env_var("MLFLOW_CURRENT_TAGS", json.dumps(mlflow_tags))
 
         submitted_run = mlflow.run(git_sync_repo, 'main', version='main', env_manager='local')
 
@@ -48,3 +57,4 @@ except mlflow.exceptions.RestException as e:
     logging.info('REST exception occurred (platform will retry based on pre-configured retry policy): ', exc_info=True)
 
 logging.info("End driver script.")
+

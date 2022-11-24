@@ -7,6 +7,7 @@ import sys
 import json
 from prodict import Prodict
 import nest_asyncio
+import mlflow
 nest_asyncio.apply()
 
 sys.excepthook = utils.handle_exception
@@ -35,6 +36,9 @@ def scdf_adapter(environment=None):
     def adapter(func):
         logger.info(f"In adapter method...")
 
+        # Pre-load artifacts (asynchronous process)
+        utils.download_mlflow_artifacts(run_tag=utils.get_env_var('RUN_TAG'), dst_path='/parent/mldata')
+
         def wrapper(*args, **kwargs):
             outputs = None
             logger.info(f"In scdf_adapter wrapper...")
@@ -43,6 +47,9 @@ def scdf_adapter(environment=None):
                 logger.info("In process_inbound method...")
                 inputs = json.loads(inputs)
                 global mlparams
+
+                # Set up MLFlow defaults
+                utils.prepare_mlflow_run()
 
                 if environment == 'ray':
                     address = utils.get_env_var('RAY_ADDRESS')
