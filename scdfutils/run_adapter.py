@@ -4,10 +4,9 @@ from pipeline_task.main.pipeline_task import PipelineTask
 from pipeline_task.main.environments.ray_environment import RayEnvironment
 from pipeline_task.main.parameter_servers.ray_parameter_server import RayParameterServer
 import sys
-import json
+import yaml
 from prodict import Prodict
 import nest_asyncio
-import mlflow
 nest_asyncio.apply()
 
 sys.excepthook = utils.handle_exception
@@ -37,7 +36,7 @@ def scdf_adapter(environment=None):
         logger.info(f"In adapter method...")
 
         # Pre-load artifacts (asynchronous process)
-        utils.download_mlflow_artifacts(run_tag=utils.get_env_var('RUN_TAG'), dst_path='/parent/mldata')
+        utils.prepare_mlflow_artifacts(run_tag=utils.get_env_var('RUN_TAG'), dst_path=utils.get_env_var('MONITOR_DATASET_ROOT_PATH'))
 
         def wrapper(*args, **kwargs):
             outputs = None
@@ -45,7 +44,7 @@ def scdf_adapter(environment=None):
 
             def process_inbound(self, _, inputs):
                 logger.info("In process_inbound method...")
-                inputs = json.loads(inputs)
+                inputs = yaml.load(inputs)
                 global mlparams
 
                 # Set up MLFlow defaults
@@ -82,7 +81,7 @@ def scdf_adapter(environment=None):
 
                     # Set up mlparams
                     mlparams = Prodict.from_dict({**inputs})
-                    logger.info(f"Input params...{inputs}\nmlparams...{mlparams}\nhttp..{mlparams.http}")
+                    logger.info(f"Input params...{inputs}\nmlparams...{mlparams}")
 
                     # Invoke ML command locally
                     ml_args = tuple([eval("f'{}'".format(arg)) for arg in args])

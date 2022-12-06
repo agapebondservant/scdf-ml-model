@@ -1,53 +1,23 @@
-import sys
 import mlflow
 import logging
 from mlflow.tracking import MlflowClient
 from scdfutils import utils
-import json
+from scdfutils.http_status_server import HttpHealthServer
 
 try:
+    # HttpHealthServer.run_thread()
+
     logging.getLogger().setLevel(logging.INFO)
 
     logging.info("Start driver script...")
 
-    git_sync_repo, command, inbound, inbound_queue, outbound, outbound_binding, current_app, \
-    prometheus_host, prometheus_port, current_experiment_name, run_tag = [*sys.argv[1:]]
+    utils.prepare_mlflow_experiment()
 
-    logging.info(f"Executing: {git_sync_repo} {inbound} {outbound} {current_app}")
+    with mlflow.start_run(experiment_id=utils.get_env_var("MLFLOW_EXPERIMENT_ID")) as active_run:
 
-    utils.set_env_var('INBOUND_PORT', inbound)
+        utils.prepare_mlflow_run()
 
-    utils.set_env_var('INBOUND_PORT_QUEUE', f"{inbound_queue}")
-
-    utils.set_env_var('OUTBOUND_PORT', outbound)
-
-    utils.set_env_var('OUTBOUND_PORT_BINDING', f"{outbound_binding}")
-
-    utils.set_env_var('CURRENT_APP', current_app)
-
-    utils.set_env_var('PROMETHEUS_HOST', prometheus_host)
-
-    utils.set_env_var('PROMETHEUS_PORT', prometheus_port)
-
-    utils.set_env_var('CURRENT_EXPERIMENT', current_experiment_name)
-
-    utils.set_env_var('RUN_TAG', run_tag)
-
-    current_experiment = mlflow.get_experiment_by_name(current_experiment_name)
-
-    current_experiment_id = current_experiment.experiment_id if current_experiment and current_experiment.lifecycle_stage == 'active' else mlflow.create_experiment(current_experiment_name)
-
-    with mlflow.start_run(experiment_id=current_experiment_id) as active_run:
-
-        mlflow_tags = {'step': current_app, 'run_tag': run_tag}
-
-        mlflow.set_tags(mlflow_tags)
-
-        utils.set_env_var("MLFLOW_EXPERIMENT_ID", current_experiment_id)
-
-        utils.set_env_var("MLFLOW_CURRENT_TAGS", json.dumps(mlflow_tags))
-
-        submitted_run = mlflow.run(git_sync_repo, 'main', version='main', env_manager='local')
+        submitted_run = mlflow.run(utils.get_env_var('GIT_SYNC_REPO'), f'{utils.get_env_var("MODEL_ENTRY")}', version='main', env_manager='local')
 
         submitted_run_metadata = MlflowClient().get_run(submitted_run.run_id)
 
@@ -55,6 +25,7 @@ try:
 
 except mlflow.exceptions.RestException as e:
     logging.info('REST exception occurred (platform will retry based on pre-configured retry policy): ', exc_info=True)
+    # HttpHealthServer.stop_thread()
 
 logging.info("End driver script.")
 

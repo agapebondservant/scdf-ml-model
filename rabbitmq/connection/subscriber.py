@@ -2,6 +2,7 @@ import pika
 import logging
 import traceback
 from rabbitmq.connection import connection
+import time
 
 
 class Subscriber(connection.Connection):
@@ -28,6 +29,17 @@ class Subscriber(connection.Connection):
         try:
             if not frame:
                 logging.info("Queue should be predeclared")
+            if self.exchange:
+                timeout = time.time() + 60
+                while time.time() < timeout:
+                    try:
+                        logging.info(f"Binding {self.queue} to {self.exchange} with routing key {self.binding_key}...")
+                        self.channel.exchange_declare(self.exchange, exchange_type='topic', durable=True)
+                        self.channel.queue_bind(self.queue, self.exchange, self.binding_key)
+                        break
+                    except Exception as e:
+                        logging.error('Could not complete queue binding: ', exc_info=True)
+                        continue
             self.channel.basic_qos(prefetch_count=self.prefetch_count)
             self.channel.basic_consume(self.queue,
                                        on_message_callback=lambda ch, m, h, body: self.handle_delivery(ch, m, h, body),
@@ -75,7 +87,9 @@ class Subscriber(connection.Connection):
                  consumer_arguments={},
                  offset=None,
                  prefetch_count=1000,
-                 conn_retry_count=0):
+                 conn_retry_count=0,
+                 exchange=None,
+                 binding_key=None):
 
         """
         Constructor.
@@ -103,6 +117,10 @@ class Subscriber(connection.Connection):
             Channel used for consuming from queue
         _connection: connection.Connection
             Connection associated with this instance
+        exchange: str
+            If specified, name of the exchange that the queue will be bound to
+        binding_key: str
+            If specified, routing key that will be used to bind the exchange to the queue (exchange must also be specified)
         """
         super(Subscriber, self).__init__()
         self.parameters = pika.ConnectionParameters(host=host,
@@ -116,5 +134,7 @@ class Subscriber(connection.Connection):
         self.set_offset(offset)
         self.prefetch_count = prefetch_count
         self.conn_retry_count = conn_retry_count
+        self.exchange = exchange
+        self.binding_key = binding_key
         self.channel = None
         self._connection = None

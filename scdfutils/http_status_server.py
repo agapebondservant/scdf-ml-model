@@ -4,6 +4,7 @@ from mlmetrics import exporter
 import logging
 logger = logging.getLogger('httpserver')
 logger.setLevel(logging.INFO)
+run_forever = True
 
 
 class HttpHealthServer(BaseHTTPRequestHandler):
@@ -39,8 +40,14 @@ class HttpHealthServer(BaseHTTPRequestHandler):
 
     @staticmethod
     def keepalive():
-        while True:
+        global run_forever
+        while run_forever:
             continue
+
+    @staticmethod
+    def stop_thread():
+        global run_forever
+        run_forever = False
 
     @staticmethod
     def run_thread(port=8080):

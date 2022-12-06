@@ -39,3 +39,4 @@ python-snappy
 # pycryptodomex
 evidently
 boto3
+pytest
