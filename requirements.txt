@@ -9,7 +9,8 @@ wheel
 scikit-learn
 nbconvert
 seaborn
-mlflow
+mlflow==2.0.1
+#mlflow==1.26.1
 traitlets
 scipy
 plotly
@@ -20,11 +21,11 @@ pika
 Pillow
 streamlit-autorefresh
 jupyterflow
-ray[default]
 lz4
 pyyaml
 prometheus-client
 protobuf==3.19.5
+# protobuf>=3.12,<5.0
 fastapi
 modin[ray]
 python-dotenv
