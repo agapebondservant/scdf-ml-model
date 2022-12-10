@@ -16,6 +16,7 @@ from evidently.test_preset import DataQualityTestPreset
 from mlmetrics import exporter
 import numpy as np
 import re
+from mlflow import MlflowClient
 
 # load_dotenv()
 reference_dataset_name, current_dataset_name = '_reference_data', '_current_data'
@@ -153,18 +154,19 @@ def prepare_mlflow_experiment():
     set_env_var("MLFLOW_CURRENT_TAGS", json.dumps(mlflow_tags))
     set_env_var("MLFLOW_EXPERIMENT_ID", current_experiment_id)
     logging.info(
-        f"Launching experiment...experiment name={current_experiment_name}, experiment id={current_experiment_id}, tags{mlflow_tags}")
+        f"Launching experiment...experiment name={current_experiment_name}, experiment id={current_experiment_id}, tags={mlflow_tags}")
 
 
-def prepare_mlflow_run():
+def prepare_mlflow_run(active_run):
     mlflow.set_tags(json.loads(get_env_var("MLFLOW_CURRENT_TAGS")))
+    set_env_var('MLFLOW_RUN_ID', active_run.info.run_id)
 
 
 def prepare_mlflow_artifacts(run_tag=None, artifact_path=None, dst_path=None):
     if dst_path:
         try:
             logging.info("Searching for artifacts (if any)...")
-            client = mlflow.MlflowClient()
+            client = MlflowClient()
             runs = mlflow.search_runs([get_env_var("MLFLOW_EXPERIMENT_ID")],
                                       filter_string=f"tags.run_tag = '{run_tag}'")
             found_artifact = None
@@ -248,6 +250,20 @@ def generate_mlflow_data_monitoring_current_dataset(self, _, msg):
                       f'Ensure that the monitoring schema was provided and that the destination path is valid.'
                       f'Provided: '
                       f'msg={msg}, schema = {get_env_var("MONITOR_SCHEMA_PATH")}, destination path={get_env_var("MONITOR_DATASET_ROOT_PATH")}')
+
+
+def get_latest_model_version(name=None, stages=[]):
+    try:
+        client = MlflowClient()
+        has_versions = len(client.search_model_versions(f"name = '{name}'"))
+        if has_versions:
+            latest_versions = client.get_latest_versions(name, stages=stages)
+            return next(iter(map(lambda mv: mv.version, latest_versions)), None)
+        else:
+            return None
+    except BaseException as e:
+        logging.info('Could not retrieve latest version: ', exc_info=True)
+        return None
 
 
 def _get_dataset_for_monitoring(dataset_name='', dst_path='', alt_dst_path=None):

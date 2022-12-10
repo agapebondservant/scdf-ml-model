@@ -47,9 +47,6 @@ def scdf_adapter(environment=None):
                 inputs = yaml.load(inputs)
                 global mlparams
 
-                # Set up MLFlow defaults
-                utils.prepare_mlflow_run()
-
                 if environment == 'ray':
                     address = utils.get_env_var('RAY_ADDRESS')
                     logger.info(f"Preparing to run on Ray remote environment - address {address}")

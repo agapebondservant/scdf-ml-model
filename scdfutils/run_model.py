@@ -1,8 +1,9 @@
 import mlflow
 import logging
-from mlflow.tracking import MlflowClient
+from mlflow import MlflowClient
 from scdfutils import utils
 from scdfutils.http_status_server import HttpHealthServer
+import traceback
 
 try:
     # HttpHealthServer.run_thread()
@@ -15,7 +16,7 @@ try:
 
     with mlflow.start_run(experiment_id=utils.get_env_var("MLFLOW_EXPERIMENT_ID")) as active_run:
 
-        utils.prepare_mlflow_run()
+        utils.prepare_mlflow_run(active_run)
 
         submitted_run = mlflow.run(utils.get_env_var('GIT_SYNC_REPO'), f'{utils.get_env_var("MODEL_ENTRY")}', version='main', env_manager='local')
 
@@ -25,7 +26,21 @@ try:
 
 except mlflow.exceptions.RestException as e:
     logging.info('REST exception occurred (platform will retry based on pre-configured retry policy): ', exc_info=True)
+    traceback.print_exc()
     # HttpHealthServer.stop_thread()
+
+except mlflow.exceptions.ExecutionException as ee:
+    logging.info("An ExecutionException occurred...", exc_info=True)
+    logging.info(str(ee))
+    traceback.print_exc()
+    # raise be
+
+
+except BaseException as be:
+    logging.info("An unexpected error occurred...", exc_info=True)
+    logging.info(str(be))
+    traceback.print_exc()
+    # raise be
 
 logging.info("End driver script.")
 
