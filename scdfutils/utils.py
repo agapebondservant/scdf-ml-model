@@ -82,9 +82,9 @@ def create_temp_file(content):
 
 def initialize_scdf_runtime_params():
     logging.info("Initializing SCDF runtime params...")
-    return {'run_id': get_env_var('MLFLOW_RUN_ID'),
-            'run_tag': get_env_var('RUN_TAG'),
-            'run_step': get_env_var('CURRENT_APP')}
+    return {'scdf_run_id': get_env_var('MLFLOW_RUN_ID'),
+            'scdf_run_tag': get_env_var('RUN_TAG'),
+            'scdf_run_step': get_env_var('CURRENT_APP')}
 
 
 def update_scdf_runtime_params(initialmlrunparams, runtime_inputs):
