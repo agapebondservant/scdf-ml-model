@@ -54,3 +54,27 @@ For example:
 ```
 stream deploy --name anomaly-detection-training --properties 'deployer.extract-features.kubernetes.enviroment-variables=GIT_SYNC_REPO=https://github.com/agapebondservant/sample-ml-step.git,MODEL_ENTRY=app.main,deployer.build-arima-model.kubernetes.enviroment-variables=GIT_SYNC_REPO=https://github.com/agapebondservant/sample-ml-step.git,MODEL_ENTRY=app.main'
 ```
+
+* To test the example:
+    * Deploy the configmap dependency:
+```
+cd </path/to/sample/ml/project>
+kubectl delete configmap test-ml-model || true
+kubectl create configmap test-ml-model --from-env-file=.env
+cd -
+kubectl rollout restart deployment/skipper
+kubectl rollout restart deployment/scdf-server
+```
+
+  * Prepare the environment for the pipelines:
+```
+scripts/prepare-pipeline-environment.sh
+```
+
+  * In GitHub, create Secrets under Settings -> Secrets -> Actions:
+    * Create a Secret named CREATE_PIPELINE_CMD with the content of scripts/commands/create-scdf-ml-pipeline.txt
+    * Create a Secret named UPDATE_PIPELINE_CMD with the content of scripts/commands/update-scdf-ml-pipeline.txt
+    * Create a Secret named SCDF_ML_KUBECONFIG with the cluster kubeconfig
+    * Create a Secret named DEMO_REGISTRY_USERNAME with the container registry username
+    * Create a Secret named DEMO_REGISTRY_PASSWORD with the container registry token/password
+    * Create a Secret named PRODUCER_SCDF_ML_MODEL_RABBITMQ_VIRTUAL_HOST with the virtual host to use for the pipelines (/ for default)

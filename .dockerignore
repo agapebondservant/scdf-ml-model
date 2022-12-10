@@ -1,0 +1,7 @@
+scripts/
+.github/
+.pytest_cache/
+tests/
+.kubeconfig
+.scdfkubeconfig
+.env

@@ -2,3 +2,10 @@ app/__pycache__/
 spring-shell.log
 .env
 .pytest_cache
+.kubeconfig
+.scdfkubeconfig
+commands/*.txttests/__pycache__/
+java/
+scdfutils/__pycache__/
+scripts/
+tests/__pycache__/

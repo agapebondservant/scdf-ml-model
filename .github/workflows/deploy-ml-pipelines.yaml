@@ -1,0 +1,89 @@
+name: SCDF ML Training Pipelines Deployment
+run-name: ${{ github.actor }} will build a docker image and deploy the latest version of SCDF ML Training Pipelines 🚀
+on: [push]
+env:
+  DATAFLOW_URI: http://scdf.tanzudatatap.ml
+  SAMPLE_PIPELINE: linear-regression
+jobs:
+  Deploy-SCDF-ML-Pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Get latest docker image tag
+        id: latest_image_tag
+        uses: jacobtomlinson/gha-get-docker-hub-tags@0.1.1
+        with:
+          org: 'oawofolu'  # Docker Hub user or organisation name
+          repo: 'scdf-ml-model'  # Docker Hub repository name
+
+      - name: Bump semver
+        id: semver
+        run: |
+          LATEST_VSN=$(echo "${{ steps.latest_image_tag.outputs.tag }}" | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.)
+          echo "tag=$LATEST_VSN" >> $GITHUB_OUTPUT
+          echo "Old Version: ${{ steps.latest_image_tag.outputs.tag }} New Version: $LATEST_VSN"
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DEMO_REGISTRY_USERNAME }}
+          password: ${{ secrets.DEMO_REGISTRY_PASSWORD }}
+
+      - name: Build image and push to Docker Hub
+        uses: docker/build-push-action@v2
+        with:
+          # relative path to the place where source code with Dockerfile is located
+          context: .
+          tags: |
+            oawofolu/scdf-ml-model:${{ steps.semver.outputs.tag }}
+          push: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Create RabbitMQ Prepare Script
+        run: |
+          touch prepare-rabbitmq.sh
+          echo "rabbitmqctl list_queues --vhost ${{ secrets.PRODUCER_SCDF_ML_MODEL_RABBITMQ_VIRTUAL_HOST }} | awk '{print $1}' |  xargs -n1 rabbitmqctl purge_queue --vhost ${{ secrets.PRODUCER_SCDF_ML_MODEL_RABBITMQ_VIRTUAL_HOST }}" > prepare-rabbitmq.sh
+          echo "exit 0" >> prepare-rabbitmq.sh
+          chmod +x prepare-rabbitmq.sh
+
+      - uses: actions-hub/kubectl@master
+        name: Purge RabbitMQ queues (1)
+        env:
+          KUBE_CONFIG: ${{ secrets.SCDF_ML_KUBECONFIG }}
+        with:
+          args: cp prepare-rabbitmq.sh default/rabbitmq-0:/tmp
+
+      - uses: actions-hub/kubectl@master
+        name: Purge RabbitMQ queues (2)
+        env:
+          KUBE_CONFIG: ${{ secrets.SCDF_ML_KUBECONFIG }}
+        with:
+          args: exec rabbitmq-0 -- bash -c "/tmp/prepare-rabbitmq.sh"
+
+      - run: |
+          touch register-commands.txt
+          echo "app register --type processor --name mlmodel --uri docker://oawofolu/scdf-ml-model:${{ steps.semver.outputs.tag }}" >> register-commands.txt
+          echo "app default --id processor:mlmodel --version ${{ steps.semver.outputs.tag }}" >> register-commands.txt
+          java -jar spring-cloud-dataflow-shell-2.9.2.jar --dataflow.uri=http://scdf.tanzudatatap.ml --spring.shell.commandFile=register-commands.txt
+          touch check-streams-commands.txt
+          echo "dataflow config server --uri http://scdf.tanzudatatap.ml" > check-streams-commands.txt
+          echo "stream list" >> check-streams-commands.txt
+          if [ $(java -jar spring-cloud-dataflow-shell-2.9.2.jar --dataflow.uri=http://scdf.tanzudatatap.ml --spring.shell.commandFile=check-streams-commands.txt | grep -c $SAMPLE_PIPELINE) != 0 ]
+          then
+            echo "Updating existing SCDF pipeline..."
+            touch update-scdf-ml-pipeline.txt
+            echo "${{ secrets.UPDATE_PIPELINE_CMD }}" > update-scdf-ml-pipeline.txt
+            java -jar spring-cloud-dataflow-shell-2.9.2.jar --dataflow.uri=http://scdf.tanzudatatap.ml --spring.shell.commandFile=update-scdf-ml-pipeline.txt
+          else
+            echo "SCDF pipeline not found, creating pipeline..."
+            touch create-scdf-ml-pipeline.txt
+            echo "${{ secrets.CREATE_PIPELINE_CMD }}" > create-scdf-ml-pipeline.txt
+            java -jar spring-cloud-dataflow-shell-2.9.2.jar --dataflow.uri=http://scdf.tanzudatatap.ml --spring.shell.commandFile=create-scdf-ml-pipeline.txt
+          fi
+        name: Update streaming pipelines if they do not exist, else create them
+      - run: echo "🍏 This job's status is ${{ job.status }}."
