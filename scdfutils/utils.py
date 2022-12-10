@@ -78,6 +78,10 @@ Dataset Utilities
 """
 
 
+def index_as_datetime(data):
+    return pd.to_datetime(data.index, format='%Y-%m-%d %H:%M:%S%z', utc=True, errors='coerce')
+
+
 def initialize_timeseries_dataframe(rows, schema_path, use_epoch_as_datetime=False):
     # Generate dataset
     with open(schema_path, "r") as f:
