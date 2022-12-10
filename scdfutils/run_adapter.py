@@ -7,6 +7,7 @@ import sys
 import yaml
 from prodict import Prodict
 import nest_asyncio
+
 nest_asyncio.apply()
 
 sys.excepthook = utils.handle_exception
@@ -14,6 +15,8 @@ logger = logging.getLogger('scdf-adapter')
 logger.setLevel(logging.INFO)
 
 mlparams = Prodict()
+SCDF_RUN_ID = None
+mlflow_run_id = None
 
 
 def scdf_adapter(environment=None):
@@ -36,16 +39,24 @@ def scdf_adapter(environment=None):
         logger.info(f"In adapter method...")
 
         # Pre-load artifacts (asynchronous process)
-        utils.prepare_mlflow_artifacts(run_tag=utils.get_env_var('RUN_TAG'), dst_path=utils.get_env_var('MONITOR_DATASET_ROOT_PATH'))
+        utils.prepare_mlflow_artifacts(run_tag=utils.get_env_var('RUN_TAG'),
+                                       dst_path=utils.get_env_var('MONITOR_DATASET_ROOT_PATH'))
 
         def wrapper(*args, **kwargs):
+            global SCDF_RUN_ID
             outputs = None
             logger.info(f"In scdf_adapter wrapper...")
+            SCDF_RUN_ID = utils.get_env_var('MLFLOW_RUN_ID')
 
             def process_inbound(self, _, inputs):
                 logger.info("In process_inbound method...")
                 inputs = yaml.load(inputs)
-                global mlparams
+
+                # Set Mlflow run id
+                global mlparams, SCDF_RUN_ID, mlflow_run_id
+                mlflow_run_id = inputs.get('scdf_run_id') or SCDF_RUN_ID
+                utils.set_env_var('MLFLOW_RUN_ID', mlflow_run_id)
+                logger.info(f"Run ID set for pipeline run={mlflow_run_id}")
 
                 if environment == 'ray':
                     address = utils.get_env_var('RAY_ADDRESS')
@@ -86,7 +97,8 @@ def scdf_adapter(environment=None):
                     outputs = func(*ml_args, **ml_kwargs)
 
                     # Merge ML command outputs with mlparams
-                    mlparams = Prodict.from_dict({**mlparams, **{utils.get_env_var('CURRENT_APP'): outputs}})
+                    mlparams = Prodict.from_dict(
+                        {**mlparams, **{utils.get_env_var('CURRENT_APP'): outputs, 'scdf_run_id': mlflow_run_id}})
                     logger.info(f"Newly set params...{mlparams}")
 
                 outbound_port.send_data(mlparams)
