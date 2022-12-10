@@ -14,9 +14,7 @@ sys.excepthook = utils.handle_exception
 logger = logging.getLogger('scdf-adapter')
 logger.setLevel(logging.INFO)
 
-mlparams = Prodict()
-SCDF_RUN_ID = None
-mlflow_run_id = None
+mlparams, mlrunparams, initialmlrunparams = Prodict(), Prodict.from_dict({'scdf_run_id': None, 'scdf_run_tag': None, 'scdf_run_step': None}), Prodict.from_dict({'scdf_run_id': None, 'scdf_run_tag': None, 'scdf_run_step': None})
 
 
 def scdf_adapter(environment=None):
@@ -43,20 +41,18 @@ def scdf_adapter(environment=None):
                                        dst_path=utils.get_env_var('MONITOR_DATASET_ROOT_PATH'))
 
         def wrapper(*args, **kwargs):
-            global SCDF_RUN_ID
+            global initialmlrunparams
             outputs = None
             logger.info(f"In scdf_adapter wrapper...")
-            SCDF_RUN_ID = utils.get_env_var('MLFLOW_RUN_ID')
+            initialmlrunparams = utils.initialize_scdf_runtime_params()
 
             def process_inbound(self, _, inputs):
                 logger.info("In process_inbound method...")
                 inputs = yaml.load(inputs)
 
-                # Set Mlflow run id
-                global mlparams, SCDF_RUN_ID, mlflow_run_id
-                mlflow_run_id = inputs.get('scdf_run_id') or SCDF_RUN_ID
-                utils.set_env_var('MLFLOW_RUN_ID', mlflow_run_id)
-                logger.info(f"Run ID set for pipeline run={mlflow_run_id}")
+                # Set pipeline run params
+                global mlparams, mlrunparams, initialmlrunparams
+                mlrunparams = utils.update_scdf_runtime_params(initialmlrunparams, inputs)
 
                 if environment == 'ray':
                     address = utils.get_env_var('RAY_ADDRESS')
@@ -98,7 +94,7 @@ def scdf_adapter(environment=None):
 
                     # Merge ML command outputs with mlparams
                     mlparams = Prodict.from_dict(
-                        {**mlparams, **{utils.get_env_var('CURRENT_APP'): outputs, 'scdf_run_id': mlflow_run_id}})
+                        {**mlparams, **{utils.get_env_var('CURRENT_APP'): outputs}, **mlrunparams})
                     logger.info(f"Newly set params...{mlparams}")
 
                 outbound_port.send_data(mlparams)

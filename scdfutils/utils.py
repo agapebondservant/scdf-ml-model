@@ -17,6 +17,7 @@ from mlmetrics import exporter
 import numpy as np
 import re
 from mlflow import MlflowClient
+from prodict import Prodict
 
 # load_dotenv()
 reference_dataset_name, current_dataset_name = '_reference_data', '_current_data'
@@ -70,6 +71,31 @@ def create_temp_file(content):
     with tempfile.NamedTemporaryFile() as f:
         joblib.dump(content, f)
         return f
+
+
+"""
+#######################################
+# SCDF Utilities
+#######################################
+"""
+
+
+def initialize_scdf_runtime_params():
+    logging.info("Initializing SCDF runtime params...")
+    return {'run_id': get_env_var('MLFLOW_RUN_ID'),
+            'run_tag': get_env_var('RUN_TAG'),
+            'run_step': get_env_var('CURRENT_APP')}
+
+
+def update_scdf_runtime_params(initialmlrunparams, runtime_inputs):
+    mlrunparams = Prodict()
+    mlrunparams['scdf_run_id'] = runtime_inputs.get('scdf_run_id') or initialmlrunparams.get('scdf_run_id')
+    mlrunparams['scdf_run_tag'] = runtime_inputs.get('scdf_run_tag') or initialmlrunparams.get('scdf_run_tag')
+    mlrunparams['scdf_run_step'] = runtime_inputs.get('scdf_run_step') or initialmlrunparams.get('scdf_run_id')
+    set_env_var('MLFLOW_RUN_ID', mlrunparams['scdf_run_id'])
+    set_env_var('SCDF_RUN_TAGS', {'scdf_run_tag': mlrunparams.get('scdf_run_tag'), 'scdf_run_step': mlrunparams.get('scdf_run_step')})
+    logging.info(f"Run params set for pipeline run={get_env_var('SCDF_RUN_TAGS')}")
+    return mlrunparams
 
 """
 ##########################
@@ -141,6 +167,7 @@ def get_rolling_windows(current_dataset, reference_dataset, sliding_window_size,
         new_reference_dataset = combined_dataset.loc[previous_end:current_end]
 
     return new_current_dataset, new_reference_dataset
+
 
 """
 ##########################
