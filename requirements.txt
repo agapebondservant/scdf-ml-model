@@ -10,13 +10,12 @@ scikit-learn
 nbconvert
 seaborn
 mlflow==2.0.1
-#mlflow==1.26.1
 traitlets
 scipy
 plotly
 watchdog
 mpld3
-streamlit==1.11.1
+streamlit # streamlit==1.11.1
 pika
 Pillow
 streamlit-autorefresh
@@ -24,10 +23,9 @@ jupyterflow
 lz4
 pyyaml
 prometheus-client
-protobuf==3.20.0
-# protobuf==3.19.5
-# protobuf>=3.12,<5.0
+protobuf # protobuf==3.20.0 # protobuf==3.19.5 # protobuf>=3.12,<5.0
 fastapi
+https://files.pythonhosted.org/packages/ab/88/dc597fdadd74b1a2fe7d4e4fb56f44a2b444a01b76ec35f31c7eee28f2d0/ray-2.1.0-cp310-cp310-manylinux2014_x86_64.whl # ray[default]==2.1.0
 modin[ray]
 python-dotenv
 https://github.com/agapebondservant/pipeline-wrapper-accelerator/zipball/main
