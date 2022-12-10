@@ -24,7 +24,8 @@ jupyterflow
 lz4
 pyyaml
 prometheus-client
-protobuf==3.19.5
+protobuf==3.20.0
+# protobuf==3.19.5
 # protobuf>=3.12,<5.0
 fastapi
 modin[ray]

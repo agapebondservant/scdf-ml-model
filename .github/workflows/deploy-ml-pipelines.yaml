@@ -18,7 +18,7 @@ jobs:
           org: 'oawofolu'  # Docker Hub user or organisation name
           repo: 'scdf-ml-model'  # Docker Hub repository name
 
-      - name: Bump semver
+      - name: Bump semver patch
         id: semver
         run: |
           LATEST_VSN=$(echo "${{ steps.latest_image_tag.outputs.tag }}" | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.)
