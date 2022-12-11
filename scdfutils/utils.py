@@ -254,7 +254,6 @@ def handle_mlflow_data_monitoring(current_dataset, sliding_window_size=None, sli
         _store_dataset_for_monitoring(dataset_name=reference_dataset_name, dst_path=dst_path, dataset=reference_dataset)
 
         # TODO: Publish ML metrics
-        # exporter.prepare_histogram('mldata_monitoring', 'ML Data Monitoring', get_env_var('MLFLOW_CURRENT_TAGS'), tests_results_json)
         logging.info("Publishing log metrics...")
         exporter.prepare_histogram('mldata_monitoring', 'ML Data Monitoring', get_env_var('MLFLOW_CURRENT_TAGS'),
                                    np.random.randint(0, 100))
