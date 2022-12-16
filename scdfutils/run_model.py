@@ -14,7 +14,7 @@ try:
 
     utils.prepare_mlflow_experiment()
 
-    with mlflow.start_run(experiment_id=utils.get_env_var("MLFLOW_EXPERIMENT_ID")) as active_run:
+    with mlflow.start_run(experiment_id=utils.get_env_var("MLFLOW_EXPERIMENT_ID"), run_name='training') as active_run:
 
         utils.prepare_mlflow_run(active_run)
 

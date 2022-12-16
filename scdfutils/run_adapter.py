@@ -14,7 +14,7 @@ sys.excepthook = utils.handle_exception
 logger = logging.getLogger('scdf-adapter')
 logger.setLevel(logging.INFO)
 
-mlparams, mlrunparams, initialmlrunparams = Prodict(), Prodict.from_dict({'scdf_run_id': None, 'scdf_run_tag': None, 'scdf_run_step': None}), Prodict.from_dict({'scdf_run_id': None, 'scdf_run_tag': None, 'scdf_run_step': None})
+mlparams, mlrunparams, initialmlrunparams = Prodict(), Prodict.from_dict({'scdf_run_id': None, 'scdf_experiment_id': None, 'scdf_run_tag': None, 'scdf_run_step': None}), Prodict.from_dict({'scdf_run_id': None, 'scdf_experiment_id': None, 'scdf_run_tag': None, 'scdf_run_step': None})
 
 
 def scdf_adapter(environment=None):
