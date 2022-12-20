@@ -172,6 +172,15 @@ def get_rolling_windows(current_dataset, reference_dataset, sliding_window_size,
     return new_current_dataset, new_reference_dataset
 
 
+def get_next_rolling_window(current_dataset, num_shifts, data_freq):
+    if not len(current_dataset):
+        logging.error("Error: Cannot get the next rolling window for an empty dataset")
+    else:
+        new_dataset = pd.concat([current_dataset[num_shifts % len(current_dataset):], current_dataset[:num_shifts % len(current_dataset)]])
+        new_dataset.index = current_dataset.index + pd.Timedelta(value=num_shifts, unit=data_freq)
+        return new_dataset
+
+
 """
 ##########################
 MLFlow Utilities
