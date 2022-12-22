@@ -42,7 +42,7 @@ The location of the CSV schema file to use for data drift detection.
 * **Control port** for driving the main flow, which is to execute the **mlmodel** application as an MLFlow **run**
 * **Monitoring port** for exporting ML, data and resource metrics to SCDF's integrated Prometheus
 
-In order to inject the ports into the MLProject code automatically, Python functions must be annotated with the **scdf_adapter** decorator.
+In order to inject the ports into the MLProject code automatically, Python functions must be annotated with the **@scdf_adapter** decorator.
 This enables access to in-built adapters for accessing the ports, injects parameters from the SCDF pipeline into the MLProject, 
 and also automatically enables the control port.
 
