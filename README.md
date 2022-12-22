@@ -2,6 +2,9 @@
 
 SCDF processor abstraction for executing a Python step in a machine learning pipeline.
 
+## Disclaimer
+**NOTE**: This is NOT production-ready code. It is only implemented as a prototype.
+
 <img src="End-to-end Machine and Deep Learning with MLFlow and Spring.jpg"
      alt="Markdown Monster icon"
      style="float: left; margin-right: 10px;" />
@@ -17,7 +20,32 @@ Fully qualified Python module which invokes the ML model on load, ex. _**app.mai
 
 _**git_sync_repo**_: _(Required)_
 
-git clone address (https) of the git repository hosting the Python ML model
+git clone address (https) of the git repository hosting the MLFlow MLProject.
+
+_**monitor_app**_: _(Optional, default: true)_
+
+Whether this is a monitoring application for an **mlmodel**.
+
+_**monitor_sliding_window_size**_: _(Optional, int)_ 
+
+The size of the sliding window to use for monitoring.
+
+.**monitor_schema_path**_: _(Optional, default: data/schema.csv)_
+
+The location of the CSV schema file to use for data drift detection.
+
+## How It Works
+**mlmodel** runs the Python processor application as an **MLFlow** MLProject. Using environment variables injected by Spring Cloud Data Flow,
+(either out-of-the-box or by injecting a ConfigMap as a pipeline property), it prepares the following ports:
+
+* **Data ports**, which are connectors for integrating with services on ETL, training cluster & tuning clusters
+* **Control port** for driving the main flow, which is to execute the **mlmodel** application as an MLFlow **run**
+* **Monitoring port** for exporting ML, data and resource metrics to SCDF's integrated Prometheus
+
+In order to inject the ports into the MLProject code automatically, Python functions must be annotated with the **scdf_adapter** decorator.
+This enables access to in-built adapters for accessing the ports, injects parameters from the SCDF pipeline into the MLProject, 
+and also automatically enables the control port.
+
 
 ## Other
 
