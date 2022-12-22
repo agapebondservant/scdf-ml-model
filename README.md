@@ -1,6 +1,6 @@
 # ML Model Processor for Spring Cloud Data Flow
 
-SCDF processor abstraction for executing a step in a machine learning pipeline.
+SCDF processor abstraction for executing a Python step in a machine learning pipeline.
 
 <img src="End-to-end Machine and Deep Learning with MLFlow and Spring.jpg"
      alt="Markdown Monster icon"
