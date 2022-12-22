@@ -30,7 +30,7 @@ _**monitor_sliding_window_size**_: _(Optional, int)_
 
 The size of the sliding window to use for monitoring.
 
-.**monitor_schema_path**_: _(Optional, default: data/schema.csv)_
+_**monitor_schema_path**_: _(Optional, default: data/schema.csv)_
 
 The location of the CSV schema file to use for data drift detection.
 
