@@ -2,6 +2,10 @@
 
 SCDF processor abstraction for executing a step in a machine learning pipeline.
 
+<img src="End-to-end Machine and Deep Learning with MLFlow and Spring.jpg"
+     alt="Markdown Monster icon"
+     style="float: left; margin-right: 10px;" />
+
 ## Current Limitations
 * Currently supports Python 3.
 
