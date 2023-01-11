@@ -4,6 +4,6 @@ stream update --name firehose-proxy --force
 
 stream update --name firehose --force
 
-stream update --name sentiment-analysis-monitor --force
+stream update --name logistic-regression-monitor --force
 
-stream update --name sentiment-analysis-regression --force
+stream update --name logistic-regression --force
