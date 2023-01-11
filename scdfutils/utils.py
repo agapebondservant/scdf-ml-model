@@ -18,10 +18,20 @@ import numpy as np
 import re
 from mlflow import MlflowClient
 from prodict import Prodict
+from multiprocessing import Process, Lock
+from filelock import FileLock, Timeout
+from mlflow.models import MetricThreshold
 
 # load_dotenv()
 reference_dataset_name, current_dataset_name = '_reference_data', '_current_data'
+mutex = Lock()
+file_locks = {}
 
+
+################################################
+# Command Line Utils
+#
+################################################
 
 def get_cmd_arg(name):
     d = defaultdict(list)
@@ -36,6 +46,10 @@ def get_cmd_arg(name):
         logging.info('Unknown command line arg requested: {}'.format(name))
 
 
+################################################
+# Environment Variable Utils
+#
+################################################
 def get_env_var(name):
     if name in os.environ:
         value = os.environ[name]
@@ -49,6 +63,35 @@ def set_env_var(name, value):
         os.environ[name] = value
 
 
+################################################
+# Thread/Concurrency Utils
+#
+################################################
+
+def synchronize(target=None, args=(), kwargs={}):
+    with mutex:
+        p = Process(target=target, args=args, kwargs=kwargs)
+        p.start()
+
+
+def synchronize_file_write(file=None, file_path=None):
+    try:
+        global file_locks
+        key = file_path.replace(os.sep, '_')
+        lock = file_locks.get(key) or FileLock(f"{file_path}.lock")
+        with lock:
+            with open(file_path, "wb") as file_handle:
+                joblib.dump(file, file_handle)
+    except Exception as e:
+        logging.info(f'Synchronized file write to {file} at file_path {file_path} failed - error occurred: ',
+                     exc_info=True)
+
+
+################################################
+# Port Utils
+#
+################################################
+
 def get_rabbitmq_host():
     return get_env_var('SPRING_RABBITMQ_HOST')
 
@@ -61,23 +104,28 @@ def get_rabbitmq_password():
     return get_env_var('SPRING_RABBITMQ_PASSWORD')
 
 
+#######################################
+# Exception Utilities
+#######################################
+
 def handle_exception(exc_type, exc_value, tb):
     logging.error(f'caught {exc_type} with value {exc_value}\n')
     logging.error(traceback.format_exc())
     sys.exit(1)
 
 
+#######################################
+# File Utilities
+#######################################
 def create_temp_file(content):
     with tempfile.NamedTemporaryFile() as f:
         joblib.dump(content, f)
         return f
 
 
-"""
 #######################################
 # SCDF Utilities
 #######################################
-"""
 
 
 def initialize_scdf_runtime_params():
@@ -100,15 +148,22 @@ def update_scdf_runtime_params(initialmlrunparams, runtime_inputs):
     logging.info(f"Run params set for pipeline run=run_id={get_env_var('MLFLOW_RUN_ID')}, experiment={get_env_var('MLFLOW_EXPERIMENT_ID')}, scdf_run_tags={get_env_var('SCDF_RUN_TAGS')}")
     return mlrunparams
 
-"""
+
 ##########################
-Dataset Utilities
+# Dataset Utilities
 #########################
-"""
 
 
 def index_as_datetime(data):
     return pd.to_datetime(data.index, format='%Y-%m-%d %H:%M:%S%z', utc=True, errors='coerce')
+
+
+def datetime_as_utc(dt):
+    return pytz.utc.localize(dt)
+
+
+def datetime_as_offset(dt):
+    return int(dt.timestamp())
 
 
 def initialize_timeseries_dataframe(rows, schema_path, use_epoch_as_datetime=False):
@@ -172,20 +227,33 @@ def get_rolling_windows(current_dataset, reference_dataset, sliding_window_size,
     return new_current_dataset, new_reference_dataset
 
 
-def get_next_rolling_window(current_dataset, num_shifts, data_freq):
+def get_next_rolling_window(current_dataset, num_shifts):
     if not len(current_dataset):
         logging.error("Error: Cannot get the next rolling window for an empty dataset")
     else:
-        new_dataset = pd.concat([current_dataset[num_shifts % len(current_dataset):], current_dataset[:num_shifts % len(current_dataset)]])
-        new_dataset.index = current_dataset.index + pd.Timedelta(value=num_shifts, unit=data_freq)
+        new_dataset = pd.concat(
+            [current_dataset[num_shifts % len(current_dataset):], current_dataset[:num_shifts % len(current_dataset)]])
+        new_dataset.index = current_dataset.index + (current_dataset.index.freq * num_shifts)
         return new_dataset
 
 
-"""
+def get_current_datetime():
+    return pytz.utc.localize(datetime.now())
+
+
 ##########################
-MLFlow Utilities
+# MLFlow Utilities
 #########################
-"""
+def get_current_run_id():
+    last_active_run = mlflow.last_active_run()
+    return last_active_run.info.run_id if last_active_run else None
+
+
+def get_parent_run_id(experiment_names=['Default']):
+    runs = mlflow.search_runs(experiment_names=experiment_names, filter_string="tags.runlevel='root'", max_results=1,
+                              output_format='list')
+    logging.debug(f"Parent run is...{runs}")
+    return runs[0].info.run_id if len(runs) else None
 
 
 def prepare_mlflow_experiment():
@@ -196,15 +264,20 @@ def prepare_mlflow_experiment():
     mlflow_tags = {'step': get_env_var('CURRENT_APP'), 'run_tag': get_env_var('RUN_TAG')}
     set_env_var("MLFLOW_CURRENT_TAGS", json.dumps(mlflow_tags))
     set_env_var("MLFLOW_EXPERIMENT_ID", current_experiment_id)
+    parent_run_id = get_parent_run_id(experiment_names=[current_experiment_name])
+    if parent_run_id is not None:
+        mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
+    else:
+        mlflow.set_tags({'runlevel': 'root'})
     logging.info(
         f"Launching experiment...experiment name={current_experiment_name}, experiment id={current_experiment_id}, tags={mlflow_tags}")
 
 
 def prepare_mlflow_run(active_run):
     mlflow.set_tags(json.loads(get_env_var("MLFLOW_CURRENT_TAGS")))
-    set_env_var('MLFLOW_RUN_ID', active_run.info.run_id)
+    set_env_var('MLFLOW_RUN_ID', get_current_run_id())
 
-
+"""
 def prepare_mlflow_artifacts(run_tag=None, artifact_path=None, dst_path=None):
     if dst_path:
         try:
@@ -232,6 +305,7 @@ def prepare_mlflow_artifacts(run_tag=None, artifact_path=None, dst_path=None):
     else:
         logging.error(f"To download artifacts, run tag and download paths are required "
                       f"(provided run tag = {run_tag}, download paths={dst_path})")
+"""
 
 
 def handle_mlflow_data_monitoring(current_dataset, sliding_window_size=None, sliding_window_period_seconds=None,
@@ -306,6 +380,160 @@ def get_latest_model_version(name=None, stages=[]):
     except BaseException as e:
         logging.info('Could not retrieve latest version: ', exc_info=True)
         return None
+
+
+def mlflow_log_model(parent_run_id, model, flavor, **kwargs):
+    logging.info(f"In log_model...run id = {parent_run_id}")
+    mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
+
+    getattr(mlflow, flavor).log_model(model, **kwargs)
+
+    logging.info("Logging was successful.")
+
+
+def mlflow_load_model(parent_run_id, flavor, model_uri=None, **kwargs):
+    try:
+        logging.info(f"In load_model...run id = {parent_run_id}")
+        mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
+
+        model = getattr(mlflow, flavor).load_model(model_uri)
+        logging.info("Model loaded.")
+
+        return model
+    except Exception as e:
+        logging.info(f'Could not complete execution for load_model - {model_uri}- error occurred: ', exc_info=True)
+
+
+def mlflow_log_dict(parent_run_id, dataframe=None, dict_name=None):
+    logging.info(f"In log_dict...run id = {parent_run_id}")
+    mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
+
+    dataframe.index = dataframe.index.astype('str')
+    MlflowClient().log_dict(parent_run_id, dataframe.to_dict(), dict_name)
+
+    logging.info("Logging was successful.")
+
+
+def mlflow_log_metric(parent_run_id, **kwargs):
+    logging.info(f"In log_metric...run id = {parent_run_id}")
+    mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
+
+    MlflowClient().log_metric(parent_run_id, **kwargs)
+
+    logging.info("Logging was successful.")
+
+
+def mlflow_log_artifact(parent_run_id, artifact, local_path, **kwargs):
+    logging.info(f"In log_artifact...run id = {parent_run_id}, local_path")
+    mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
+
+    with open(local_path, "wb") as artifact_handle:
+        joblib.dump(artifact, artifact_handle)
+    # synchronize_file_write(file=artifact, file_path=local_path)
+    MlflowClient().log_artifact(parent_run_id, local_path, **kwargs)
+    logging.info("Logging was successful.")
+
+
+def mlflow_load_artifact(parent_run_id, artifact_name, **kwargs):
+    try:
+        logging.info(f"In load_artifact...run id = {parent_run_id}, {kwargs}")
+        mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
+
+        artifact_list = MlflowClient().list_artifacts(parent_run_id)
+        artifact_match = next((artifact for artifact in artifact_list if artifact.path == artifact_name), None)
+        artifact = None
+
+        if artifact_match:
+            download_path = mlflow.artifacts.download_artifacts(**kwargs)
+            logging.info(f"Artifact downloaded to...{download_path}")
+            with open(f"{download_path}", "rb") as artifact_handle:
+                artifact = joblib.load(artifact_handle)
+        else:
+            logging.info(f"Artifact {artifact_name} cannot be loaded (has not yet been saved).")
+
+        return artifact
+    except Exception as e:
+        logging.info(f'Could not complete execution for load_artifact - {kwargs}- error occurred: ', exc_info=True)
+
+
+def mlflow_log_text(parent_run_id, **kwargs):
+    logging.info(f"In log_text...run id = {parent_run_id}, {kwargs}")
+    mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
+
+    MlflowClient().log_text(parent_run_id, **kwargs)
+
+    logging.info("Logging was successful.")
+
+
+def mlflow_load_text(parent_run_id, **kwargs):
+    try:
+        logging.info(f"In load_text...{kwargs}")
+        mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
+
+        text = mlflow.artifacts.load_text(**kwargs)
+        logging.info(f"Text...{text}")
+
+        return text
+    except Exception as e:
+        logging.info(f'Could not complete execution for load_text - {kwargs}- error occurred: ', exc_info=True)
+
+
+def get_dataframe_from_dict(parent_run_id=None, artifact_name=None):
+    if parent_run_id and artifact_name:
+        pd.DataFrame.from_dict(mlflow.artifacts.load_dict(f"runs:/{parent_run_id}/{artifact_name}"))
+    else:
+        logging.error(
+            f"Could not load dict with empty parent_run_id or artifact_name (run_id={parent_run_id}, artifact_name={artifact_name}")
+
+
+def mlflow_generate_autolog_metrics(flavor=None):
+    getattr(mlflow, flavor).autolog(log_models=False) if flavor is not None else mlflow.autolog(log_models=False)
+
+
+def mlflow_evaluate_models(parent_run_id, flavor, baseline_model=None, candidate_model=None, data=None,
+                           version=None):
+    mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
+    logging.info(f"In evaluate_models...run id = {parent_run_id}")
+    try:
+        client = MlflowClient()
+
+        mlflow.evaluate(
+            candidate_model.model_uri,
+            data,
+            targets="target",
+            model_type="regressor",
+            validation_thresholds={
+                "r2_score": MetricThreshold(
+                    threshold=0.5,
+                    min_absolute_change=0.05,
+                    min_relative_change=0.05,
+                    higher_is_better=True
+                ),
+            },
+            baseline_model=baseline_model.model_uri,
+        )
+
+        logging.info("Candidate model passed evaluation; promoting to Staging...")
+
+        client.transition_model_version_stage(
+            name="baseline_model",
+            version=version,
+            stage="Staging"
+        )
+
+        logging.info("Candidate model promoted successfully.")
+
+        logging.info("Updating baseline model...")
+        mlflow_log_model(candidate_model,
+                         parent_run_id,
+                         registered_model_name='baseline_model',
+                         await_registration_for=None)
+
+        logging.info("Evaluation complete.")
+        return True
+    except BaseException as e:
+        logging.error(
+            "Candidate model training failed to satisfy configured thresholds...could not promote. Retaining baseline model.")
 
 
 def _get_dataset_for_monitoring(dataset_name='', dst_path='', alt_dst_path=None):

@@ -37,8 +37,8 @@ def scdf_adapter(environment=None):
         logger.info(f"In adapter method...")
 
         # Pre-load artifacts (asynchronous process)
-        utils.prepare_mlflow_artifacts(run_tag=utils.get_env_var('RUN_TAG'),
-                                       dst_path=utils.get_env_var('MONITOR_DATASET_ROOT_PATH'))
+        # utils.prepare_mlflow_artifacts(run_tag=utils.get_env_var('RUN_TAG'),
+        #                               dst_path=utils.get_env_var('MONITOR_DATASET_ROOT_PATH'))
 
         def wrapper(*args, **kwargs):
             global initialmlrunparams

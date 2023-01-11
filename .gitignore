@@ -4,8 +4,8 @@ spring-shell.log
 .pytest_cache
 .kubeconfig
 .scdfkubeconfig
-commands/*.txttests/__pycache__/
+scripts/commands/create-scdf-ml-pipeline.txt
+scripts/commands/update-scdf-ml-pipeline.txt
 java/
 scdfutils/__pycache__/
-scripts/
 tests/__pycache__/

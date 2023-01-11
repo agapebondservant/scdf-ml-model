@@ -1,0 +1,9 @@
+dataflow config server --uri ${DEMO_DATAFLOW_URI}
+
+stream update --name firehose-proxy --force
+
+stream update --name firehose --force
+
+stream update --name sentiment-analysis-monitor --force
+
+stream update --name sentiment-analysis-regression --force
