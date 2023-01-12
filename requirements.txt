@@ -31,8 +31,7 @@ python-dotenv
 https://github.com/agapebondservant/pipeline-wrapper-accelerator/zipball/main
 prodict
 https://github.com/agapebondservant/ml-metrics-accelerator/zipball/main
-#https://github.com/agapebondservant/scdf-ml-utils/zipball/main
-https://github.com/agapebondservant/scdf-ml-utils/zipball/main#egg=scdf-ml-utils&subdirectory=rabbitmq
+https://github.com/agapebondservant/scdf-ml-utils/zipball/main
 rsocket
 asyncio
 nest_asyncio
