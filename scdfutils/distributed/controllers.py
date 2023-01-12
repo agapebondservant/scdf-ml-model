@@ -6,7 +6,7 @@ from mlflow import MlflowClient
 from mlflow.models import MetricThreshold
 import pandas as pd
 import joblib
-# from scdfutils import utils
+from scdfutils import utils
 from datetime import datetime
 
 #######################################################
