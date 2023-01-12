@@ -9,8 +9,6 @@ ARG MLMODEL_EXTRA_REQUIREMENTS_TXT=requirements.txt
 WORKDIR /parent
 COPY requirements.txt ./base-requirements.txt
 COPY $MLMODEL_EXTRA_REQUIREMENTS_TXT ./extra-requirements.txt
-COPY Pipfile ./Pipfile
-COPY Pipfile.lock ./Pipfile.lock
 
 RUN apt-get clean && apt-get update \
     && apt-get install g++ -y \
@@ -20,8 +18,6 @@ RUN apt-get clean && apt-get update \
     && apt-get clean && \
     pip3 install --no-cache-dir  -r base-requirements.txt -r extra-requirements.txt
 
-# COPY rabbitmq ./rabbitmq
 COPY scdfutils ./scdfutils
-COPY distributed ./distributed
 
 ENTRYPOINT ["python", "/parent/scdfutils/prepare_run_model.py"]
