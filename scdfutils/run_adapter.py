@@ -80,7 +80,6 @@ def scdf_adapter(environment=None):
                     logger.info(f"Newly set params...{mlparams} {mlparams_ref}")
 
                 else:
-                    logger.info(f"No supported adapter for environment {environment}")
                     logger.info(f"Running in local environment...{args} {kwargs} {inputs}")
 
                     # Set up mlparams
