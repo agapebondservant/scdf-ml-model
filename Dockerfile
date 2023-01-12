@@ -20,7 +20,7 @@ RUN apt-get clean && apt-get update \
     && apt-get clean && \
     pip3 install --no-cache-dir  -r base-requirements.txt -r extra-requirements.txt
 
-COPY rabbitmq ./rabbitmq
+# COPY rabbitmq ./rabbitmq
 COPY scdfutils ./scdfutils
 COPY distributed ./distributed
 
