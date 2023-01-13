@@ -32,6 +32,7 @@ https://github.com/agapebondservant/pipeline-wrapper-accelerator/zipball/main
 prodict
 https://github.com/agapebondservant/ml-metrics-accelerator/zipball/main
 https://github.com/agapebondservant/ml-scdf-rabbitutils/zipball/main
+https://github.com/agapebondservant/ml-scdf-distributedutils/zipball/main
 rsocket
 asyncio
 nest_asyncio
