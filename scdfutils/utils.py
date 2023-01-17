@@ -142,8 +142,8 @@ def update_scdf_runtime_params(initialmlrunparams, runtime_inputs):
     mlrunparams['scdf_experiment_id'] = runtime_inputs.get('scdf_experiment_id') or initialmlrunparams.get('scdf_experiment_id')
     mlrunparams['scdf_run_tag'] = runtime_inputs.get('scdf_run_tag') or initialmlrunparams.get('scdf_run_tag')
     mlrunparams['scdf_run_step'] = runtime_inputs.get('scdf_run_step') or initialmlrunparams.get('scdf_run_id')
-    set_env_var('MLFLOW_RUN_ID', mlrunparams['scdf_run_id'])
-    set_env_var('MLFLOW_EXPERIMENT_ID', mlrunparams['scdf_experiment_id'])
+    set_env_var('MLFLOW_RUN_ID', str(mlrunparams['scdf_run_id']))
+    set_env_var('MLFLOW_EXPERIMENT_ID', str(mlrunparams['scdf_experiment_id']))
     set_env_var('SCDF_RUN_TAGS', json.dumps({'scdf_run_tag': mlrunparams.get('scdf_run_tag'), 'scdf_run_step': mlrunparams.get('scdf_run_step')}))
     logging.info(f"Run params set for pipeline run=run_id={get_env_var('MLFLOW_RUN_ID')}, experiment={get_env_var('MLFLOW_EXPERIMENT_ID')}, scdf_run_tags={get_env_var('SCDF_RUN_TAGS')}")
     return mlrunparams
