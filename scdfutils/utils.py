@@ -21,6 +21,7 @@ from prodict import Prodict
 from multiprocessing import Process, Lock
 from filelock import FileLock, Timeout
 from mlflow.models import MetricThreshold
+import csv
 
 # load_dotenv()
 reference_dataset_name, current_dataset_name = '_reference_data', '_current_data'
@@ -122,6 +123,27 @@ def create_temp_file(content):
         joblib.dump(content, f)
         return f
 
+
+def write_to_csv(file_path, row):
+    with open(file_path, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(row)
+
+
+def get_csv_length(file_path):
+    return len(pd.read_csv(file_path)) if exists(file_path) else 0
+
+
+def get_csv_rows(file_path):
+    with open(file_path, newline='') as f:
+        reader = csv.reader(f)
+        data = list(reader)
+    return data
+
+
+def truncate_file(file_path):
+    f = open(file_path, "w+")
+    f.close()
 
 #######################################
 # SCDF Utilities
