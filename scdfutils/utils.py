@@ -211,9 +211,8 @@ def dataframe_record_as_json_string(row, date_index, orientation):
 def get_dataframe_row_as_data_and_index(rows, columns, use_epoch_as_datetime=True):
     data, index = [], []
     for row in rows:
-        row_data = row[1:]
+        row_data = {columns[col]: row[col] for col in range(len(columns))}
         row_index = epoch_as_datetime(row[0]) if use_epoch_as_datetime else pd.to_datetime(row[0], errors='ignore')
-        row_data = {columns[col]: row_data[col] for col in range(len(columns))}
         data.append(row_data)
         index.append(row_index)
     return data, index
