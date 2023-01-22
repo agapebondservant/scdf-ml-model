@@ -270,11 +270,22 @@ def get_current_run_id():
     return last_active_run.info.run_id if last_active_run else None
 
 
-def get_parent_run_id(experiment_names=['Default']):
+def get_root_run_id(experiment_names=['Default']):
     runs = mlflow.search_runs(experiment_names=experiment_names, filter_string="tags.runlevel='root'", max_results=1,
                               output_format='list')
-    logging.debug(f"Parent run is...{runs}")
+    logging.debug(f"Root run is...{runs}")
     return runs[0].info.run_id if len(runs) else None
+
+
+def get_run_for_artifacts(active_run_id):
+    experiment_name = os.environ.get('MLFLOW_EXPERIMENT_NAME') or 'Default'
+    runs = mlflow.search_runs(experiment_names=[experiment_name], filter_string="tags.mainartifacts='y'", max_results=1,
+                              output_format='list')
+    if len(runs):
+        return runs[0].info.run_id
+    else:
+        mlflow.set_tags({'mainartifacts': 'y'})
+        return active_run_id
 
 
 def prepare_mlflow_experiment():
@@ -285,7 +296,7 @@ def prepare_mlflow_experiment():
     mlflow_tags = {'step': get_env_var('CURRENT_APP'), 'run_tag': get_env_var('RUN_TAG')}
     set_env_var("MLFLOW_CURRENT_TAGS", json.dumps(mlflow_tags))
     set_env_var("MLFLOW_EXPERIMENT_ID", current_experiment_id)
-    parent_run_id = get_parent_run_id(experiment_names=[current_experiment_name])
+    parent_run_id = get_root_run_id(experiment_names=[current_experiment_name])
     if parent_run_id is not None:
         mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
     else:
@@ -407,7 +418,7 @@ def mlflow_log_model(parent_run_id, model, flavor, **kwargs):
     logging.info(f"In log_model...run id = {parent_run_id}")
     mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
 
-    getattr(mlflow, flavor).log_model(model, **kwargs)
+    getattr(mlflow, flavor).log_model(model, artifact_path=flavor, **kwargs)
 
     logging.info("Logging was successful.")
 
@@ -545,8 +556,8 @@ def mlflow_evaluate_models(parent_run_id, flavor, baseline_model=None, candidate
         logging.info("Candidate model promoted successfully.")
 
         logging.info("Updating baseline model...")
-        mlflow_log_model(candidate_model,
-                         parent_run_id,
+        mlflow_log_model(parent_run_id,
+                         candidate_model,
                          registered_model_name='baseline_model',
                          await_registration_for=None)
 
