@@ -134,10 +134,9 @@ def get_csv_length(file_path):
     return len(pd.read_csv(file_path)) if exists(file_path) else 0
 
 
-def get_csv_rows(file_path, columns=None):
+def get_csv_rows(file_path):
     with open(file_path, newline='') as f:
         reader = csv.reader(f)
-        reader.fieldnames = columns if columns is not None else reader.fieldnames
         data = list(reader)
     return data
 
@@ -214,7 +213,7 @@ def get_dataframe_row_as_data_and_index(rows, columns, use_epoch_as_datetime=Tru
     for row in rows:
         row_data = row[1:]
         row_index = epoch_as_datetime(row[0]) if use_epoch_as_datetime else pd.to_datetime(row[0], errors='ignore')
-        row_data = {columns[col]: row_data[col] for col in range(len(columns))}
+        row_data = {columns[col]: row_data[col] for col in range(len(columns)-1)}
         data.append(row_data)
         index.append(row_index)
     return data, index
