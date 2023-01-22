@@ -134,9 +134,10 @@ def get_csv_length(file_path):
     return len(pd.read_csv(file_path)) if exists(file_path) else 0
 
 
-def get_csv_rows(file_path):
+def get_csv_rows(file_path, columns=None):
     with open(file_path, newline='') as f:
         reader = csv.reader(f)
+        reader.fieldnames = columns if columns is not None else reader.fieldnames
         data = list(reader)
     return data
 
