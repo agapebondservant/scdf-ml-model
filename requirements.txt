@@ -34,7 +34,7 @@ https://github.com/agapebondservant/ml-metrics-accelerator/zipball/main
 https://github.com/agapebondservant/ml-scdf-rabbitutils/zipball/main
 https://github.com/agapebondservant/ml-scdf-distributedutils/zipball/main
 rsocket
-# asyncio
+asyncio #
 nest_asyncio
 # cryptography #=3.4.8
 python-snappy
@@ -44,4 +44,4 @@ boto3
 pytest
 filelock==3.9.0
 pyarrow<7.0.0
-hickle
+hickle ####

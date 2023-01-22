@@ -6,9 +6,9 @@ from pipeline_task.main.parameter_servers.ray_parameter_server import RayParamet
 import sys
 import yaml
 from prodict import Prodict
-import nest_asyncio
+# import nest_asyncio
 
-nest_asyncio.apply()
+# nest_asyncio.apply()
 
 sys.excepthook = utils.handle_exception
 logger = logging.getLogger('scdf-adapter')
