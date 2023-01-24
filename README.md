@@ -1,6 +1,9 @@
 # ML Model Processor for Spring Cloud Data Flow
 
 SCDF processor abstraction for executing a Python step in a machine learning pipeline.
+<br/><br/>
+<a href="https://youtu.be/AurPUIna3S4" target="_blank">Link to recorded demo</a>
+<br/><br/>
 
 ## Disclaimer
 **NOTE**: This is NOT production-ready code. It is only implemented as a prototype.
