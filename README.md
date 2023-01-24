@@ -121,7 +121,7 @@ stream deploy --name anomaly-detection-training --properties 'deployer.extract-f
 * To test the example:
     * Deploy the configmap dependency:
 ```
-cd </path/to/sample/ml/project>
+cd </path/to/sample/ml/project> (from https://github.com/agapebondservant/sample-ml-step)
 kubectl delete configmap test-ml-model || true
 kubectl create configmap test-ml-model --from-env-file=.env
 cd -
