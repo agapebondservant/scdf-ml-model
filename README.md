@@ -52,7 +52,7 @@ as an **MLFlow** <a target="_blank" href="https://mlflow.org/docs/2.0.1/projects
     support almost any kind of port (the current version demonstrates RabbitMQ Messaging and Streaming ports.)
     <br/>
     For example: <br/>
-    Use **ports.get_rabbitmq_streams_port('producer', flow_type=FlowType.INBOUND, _YOUR_KWARG_OVERRIDES_)**  <br/>
+    Use **ports.get_rabbitmq_streams_port('abc', flow_type=FlowType.INBOUND, _YOUR_KWARG_OVERRIDES_)**  <br/>
     to initialize an inbound connection to a <a target="_blank" href="https://www.rabbitmq.com/streams.html"><b>RabbitMQ Streams</b></a> broker,
     using environment variables **ABC_SCDF_ML_MODEL_RABBITMQ_HOST**, **ABC_SCDF_ML_MODEL_RABBITMQ_PORT**, 
     **ABC_SCDF_ML_MODEL_RABBITMQ_USERNAME** etc as initialization parameters.
