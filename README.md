@@ -11,18 +11,19 @@ SCDF processor abstraction for executing a Python step in a machine learning pip
 
 ## Current Limitations
 * Currently supports Python 3.
+* (Other - to be documented)
 
 ## Parameters
 
 _**model_entry**_: _(Required)_
 
-Fully qualified Python module which invokes the ML model on load, ex. _**app.main**_
+Name of the MLProject **entry point** which will be invoked on load, ex. _**app.main**_
 
 _**git_sync_repo**_: _(Required)_
 
 git clone address (https) of the git repository hosting the MLFlow MLProject.
 
-_**monitor_app**_: _(Optional, default: true)_
+_**monitor_app**_: _(Optional, default: false)_
 
 Whether this is a monitoring application for an **mlmodel**.
 
@@ -35,12 +36,42 @@ _**monitor_schema_path**_: _(Optional, default: data/schema.csv)_
 The location of the CSV schema file to use for data drift detection.
 
 ## How It Works
-**mlmodel** runs the Python processor application as an **MLFlow** MLProject. Using environment variables injected by Spring Cloud Data Flow,
+**mlmodel** runs a <a target="_blank" href="https://dataflow.spring.io/docs/recipes/polyglot/processor/">Python processor application in a Spring Cloud Data Flow streaming pipeline</a>
+as an **MLFlow** <a target="_blank" href="https://mlflow.org/docs/2.0.1/projects.html">MLProject</a>. Using environment variables injected by Spring Cloud Data Flow,
 (either out-of-the-box or by injecting a ConfigMap as a pipeline property), it prepares the following ports:
 
 * **Data ports**, which are connectors for integrating with services on ETL, training cluster & tuning clusters
+  * These ports are dynamically injected and auto-discoverable. To use, a 
+    <a target="_blank" href="https://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/#_configmap_references"><b>ConfigMap</b></a>
+    is mounted to the SCDF pipeline with environment variables 
+    whose names follow a given convention, allowing the ports to be accessible for reading and writing via 
+    <a target="_blank" href="https://en.wikipedia.org/wiki/Convention_over_configuration"><b>Convention over configuration</b></a>. This convention will 
+    support almost any kind of port (the current version demonstrates RabbitMQ Messaging and Streaming ports.)
+    <br/>
+    For example: <br/>
+    Use **ports.get_rabbitmq_streams_port('producer', flow_type=FlowType.INBOUND, _YOUR_KWARG_OVERRIDES_)**  <br/>
+    to initialize an inbound connection to a <a target="_blank" href="https://www.rabbitmq.com/streams.html"><b>RabbitMQ Streams</b></a> broker,
+    using environment variables **ABC_SCDF_ML_MODEL_RABBITMQ_HOST**, **ABC_SCDF_ML_MODEL_RABBITMQ_PORT**, 
+    **ABC_SCDF_ML_MODEL_RABBITMQ_USERNAME** etc as initialization parameters.
+    <br/><br/>
+    
 * **Control port** for driving the main flow, which is to execute the **mlmodel** application as an MLFlow **run**
-* **Monitoring port** for exporting ML, data and resource metrics to SCDF's integrated Prometheus
+  * This port is automatically instantiated to handle the flow of parameters between the current step 
+    (a <a target="_blank" href="https://dataflow.spring.io/docs/concepts/architecture/"><b>processor</b></a>), 
+    the prior <a target="_blank" href="https://dataflow.spring.io/docs/concepts/architecture/"><b>processor</b></a> or
+    <a target="_blank" href="https://dataflow.spring.io/docs/concepts/architecture/"><b>sink</b></a>, 
+    and the following <a target="_blank" href="https://dataflow.spring.io/docs/concepts/architecture/"><b>processor</b></a>
+    or <a target="_blank" href="https://dataflow.spring.io/docs/concepts/architecture/"><b>source</b></a>. It sets up an 
+    <a target="_blank" href="https://mlflow.org/docs/latest/python_api/mlflow.entities.html?highlight=run#mlflow.entities.Run"><b>MlFlow run</b></a>
+    for this step with various parameters. It also enables integration with endpoints exposed via environment variables injected 
+    into the <a target="_blank" href="https://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/#_configmap_references"><b>ConfigMap</b></a> above, ex. 
+    **RAY_ADDRESS** for Ray, or **MLFLOW_TRACKING_URI** for MlFlow.
+    <br/><br/>
+  
+* **Monitoring port** for exporting ML, data and resource metrics to <a target="_blank" href="https://dataflow.spring.io/docs/feature-guides/streams/monitoring/">SCDF's integrated Prometheus</a>
+  * This port is automatically instantiated to handle scraping a Prometheus endpoint,**/actuator/prometheus**, which is exposed by default by the processor. 
+    A <a target="_blank" href="https://github.com/agapebondservant/ml-metrics-accelerator">helper library</a> (beta) was developed which supports exporting metrics to **/actuator/prometheus**.
+    <br/><br/>
 
 In order to inject the ports into the MLProject code automatically, Python functions must be annotated with the **@scdf_adapter** decorator.
 This enables access to in-built adapters for accessing the ports, injects parameters from the SCDF pipeline into the MLProject, 
@@ -74,7 +105,7 @@ stream create --name MyPipeline --definition '<your source> | <your processor> |
 ```
 For example:
 ```
-stream create --name anomaly-detection-training --definition 'http | extract-features: ml-model model_entry=app.main git_sync_repo=https://github.com/agapebondservant/sample-ml-step.git| build-arima-model: ml-model model_entry=app.main git_sync_repo=https://github.com/agapebondservant/sample-ml-step.git | log'
+stream create --name anomaly-detection-training --definition 'http | extract-features: ml-model model_entry=app.main git_sync_repo=https://github.com/<your-repo>/sample-ml-step.git|  log'
 ```
 
 * To deploy a streaming pipeline:
