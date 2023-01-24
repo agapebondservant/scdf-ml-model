@@ -68,7 +68,7 @@ as an **MLFlow** <a target="_blank" href="https://mlflow.org/docs/2.0.1/projects
     <a target="_blank" href="https://mlflow.org/docs/latest/python_api/mlflow.entities.html?highlight=run#mlflow.entities.Run"><b>MlFlow run</b></a>
     for this step with various parameters. It also enables integration with endpoints exposed via environment variables injected 
     into the <a target="_blank" href="https://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/#_configmap_references"><b>ConfigMap</b></a> above, ex. 
-    **RAY_ADDRESS** for Ray, or **MLFLOW_TRACKING_URI** for MlFlow.
+    **RAY_ADDRESS** for <a href="https://www.ray.io/" target="_blank">Ray</a>, or **MLFLOW_TRACKING_URI** for <a href="https://mlflow.org" target="_blank">MlFlow</a>.
     <br/><br/>
   
 * **Monitoring port** for exporting ML, data and resource metrics to <a target="_blank" href="https://dataflow.spring.io/docs/feature-guides/streams/monitoring/">SCDF's integrated Prometheus</a>
