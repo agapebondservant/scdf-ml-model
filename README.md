@@ -43,7 +43,7 @@ The location of the CSV schema file to use for data drift detection.
 as an **MLFlow** <a target="_blank" href="https://mlflow.org/docs/2.0.1/projects.html">MLProject</a>. Using environment variables injected by Spring Cloud Data Flow,
 (either out-of-the-box or by injecting a ConfigMap as a pipeline property), it prepares the following ports:
 
-* **Data ports**, which are connectors for integrating with services on ETL, training cluster & tuning clusters
+* **Data ports**, which are connectors for integrating with services on ETL, training & tuning clusters
   * These ports are dynamically injected and auto-discoverable. To use, a 
     <a target="_blank" href="https://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/#_configmap_references"><b>ConfigMap</b></a>
     is mounted to the SCDF pipeline with environment variables 
@@ -82,8 +82,9 @@ and also automatically enables the control port.
 
 
 ## Other
+### (Coming soon: Full instructions for testing the ML Model Processor in a full-fledged pipeline. The guidance below provides a partial subset of instructions.)
 
-* To build and test ML Model Processor docker image locally:
+* To build and run ML Model Processor docker image locally:
 ```
 docker build -t scdf-ml-model:0.0.1 .
 docker push scdf-ml-model:0.0.1 .
