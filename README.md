@@ -2,7 +2,7 @@
 
 SCDF processor abstraction for executing a Python step in a machine learning pipeline.
 <br/><br/>
-<a href="https://youtu.be/AurPUIna3S4" target="_blank">Link to recorded demo</a>
+<a href="https://youtu.be/51VT-d5lYaA" target="_blank">Link to recorded demo</a>
 <br/><br/>
 
 ## Disclaimer
