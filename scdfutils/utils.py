@@ -273,8 +273,15 @@ def get_current_run_id():
 def get_root_run_id(experiment_names=['Default']):
     runs = mlflow.search_runs(experiment_names=experiment_names, filter_string="tags.runlevel='root'", max_results=1,
                               output_format='list')
-    logging.debug(f"Root run is...{runs}")
-    return runs[0].info.run_id if len(runs) else None
+    logging.debug(f"Parent run is...{runs}")
+    root_run_id = runs[0].info.run_id if len(runs) else None
+    if root_run_id is not None:
+        mlflow.set_tags({'mlflow.parentRunId': root_run_id})
+    else:
+        mlflow.set_tags({'runlevel': 'root'})
+        last_active_run = mlflow.last_active_run()
+        root_run_id = last_active_run.info.run_id if last_active_run else None
+    return root_run_id
 
 
 def get_run_for_artifacts(active_run_id):
@@ -297,10 +304,10 @@ def prepare_mlflow_experiment():
     set_env_var("MLFLOW_CURRENT_TAGS", json.dumps(mlflow_tags))
     set_env_var("MLFLOW_EXPERIMENT_ID", current_experiment_id)
     parent_run_id = get_root_run_id(experiment_names=[current_experiment_name])
-    if parent_run_id is not None:
+    """if parent_run_id is not None:
         mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
     else:
-        mlflow.set_tags({'runlevel': 'root'})
+        mlflow.set_tags({'runlevel': 'root'})"""
     logging.info(
         f"Launching experiment...experiment name={current_experiment_name}, experiment id={current_experiment_id}, tags={mlflow_tags}")
 
@@ -418,7 +425,7 @@ def mlflow_log_model(parent_run_id, model, flavor, **kwargs):
     logging.info(f"In log_model...run id = {parent_run_id}")
     mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
 
-    getattr(mlflow, flavor).log_model(model, artifact_path=flavor, **kwargs)
+    getattr(mlflow, flavor).log_model(model, **kwargs)
 
     logging.info("Logging was successful.")
 
@@ -523,7 +530,7 @@ def mlflow_generate_autolog_metrics(flavor=None):
 
 
 def mlflow_evaluate_models(parent_run_id, flavor, baseline_model=None, candidate_model=None, data=None,
-                           version=None):
+                           version=None, baseline_model_name='baseline_model'):
     mlflow.set_tags({'mlflow.parentRunId': parent_run_id})
     logging.info(f"In evaluate_models...run id = {parent_run_id}")
     try:
@@ -558,7 +565,8 @@ def mlflow_evaluate_models(parent_run_id, flavor, baseline_model=None, candidate
         logging.info("Updating baseline model...")
         mlflow_log_model(parent_run_id,
                          candidate_model,
-                         registered_model_name='baseline_model',
+                         artifact_path=flavor,
+                         registered_model_name=baseline_model_name,
                          await_registration_for=None)
 
         logging.info("Evaluation complete.")
